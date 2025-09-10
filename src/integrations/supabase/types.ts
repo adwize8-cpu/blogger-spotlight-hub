@@ -14,16 +14,161 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bloggers: {
+        Row: {
+          barter_available: boolean | null
+          bio: string | null
+          created_at: string
+          gender: string | null
+          handle: string
+          id: string
+          mart_available: boolean | null
+          post_price: number | null
+          profile_id: string
+          restricted_topics: string[] | null
+          story_price: number | null
+          topics: string[] | null
+          updated_at: string
+          work_conditions: string | null
+        }
+        Insert: {
+          barter_available?: boolean | null
+          bio?: string | null
+          created_at?: string
+          gender?: string | null
+          handle: string
+          id?: string
+          mart_available?: boolean | null
+          post_price?: number | null
+          profile_id: string
+          restricted_topics?: string[] | null
+          story_price?: number | null
+          topics?: string[] | null
+          updated_at?: string
+          work_conditions?: string | null
+        }
+        Update: {
+          barter_available?: boolean | null
+          bio?: string | null
+          created_at?: string
+          gender?: string | null
+          handle?: string
+          id?: string
+          mart_available?: boolean | null
+          post_price?: number | null
+          profile_id?: string
+          restricted_topics?: string[] | null
+          story_price?: number | null
+          topics?: string[] | null
+          updated_at?: string
+          work_conditions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bloggers_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platforms: {
+        Row: {
+          blogger_id: string
+          created_at: string
+          engagement_rate: number | null
+          followers: number | null
+          id: string
+          is_active: boolean | null
+          platform_type: Database["public"]["Enums"]["platform_type"]
+          post_reach: number | null
+          screenshot_url: string | null
+          story_reach: number | null
+          updated_at: string
+        }
+        Insert: {
+          blogger_id: string
+          created_at?: string
+          engagement_rate?: number | null
+          followers?: number | null
+          id?: string
+          is_active?: boolean | null
+          platform_type: Database["public"]["Enums"]["platform_type"]
+          post_reach?: number | null
+          screenshot_url?: string | null
+          story_reach?: number | null
+          updated_at?: string
+        }
+        Update: {
+          blogger_id?: string
+          created_at?: string
+          engagement_rate?: number | null
+          followers?: number | null
+          id?: string
+          is_active?: boolean | null
+          platform_type?: Database["public"]["Enums"]["platform_type"]
+          post_reach?: number | null
+          screenshot_url?: string | null
+          story_reach?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platforms_blogger_id_fkey"
+            columns: ["blogger_id"]
+            isOneToOne: false
+            referencedRelation: "bloggers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_uuid: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
     }
     Enums: {
-      [_ in never]: never
+      platform_type: "instagram" | "youtube" | "telegram" | "tiktok"
+      user_role: "admin" | "blogger"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +295,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      platform_type: ["instagram", "youtube", "telegram", "tiktok"],
+      user_role: ["admin", "blogger"],
+    },
   },
 } as const
