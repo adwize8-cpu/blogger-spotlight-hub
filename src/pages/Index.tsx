@@ -5,16 +5,45 @@ import { Header } from "@/components/Header";
 import { FilterSidebar } from "@/components/FilterSidebar";
 import { BloggerTable } from "@/components/BloggerTable";
 import { BloggerCard } from "@/components/BloggerCard";
-import { mockBloggers } from "@/data/mockBloggers";
+import { useBloggers } from "@/hooks/useBloggers";
 
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [filters, setFilters] = useState<any>({});
+  const { bloggers: dbBloggers, loading, error } = useBloggers();
+
+  // Convert database bloggers to the format expected by components
+  const formattedBloggers = useMemo(() => {
+    return dbBloggers.map((blogger, index) => {
+      const instagramPlatform = blogger.platforms.find(p => p.platform_type === 'instagram');
+      const followers = instagramPlatform?.followers || 0;
+      const followersFormatted = followers >= 1000 ? `${(followers / 1000).toFixed(1)}K` : followers.toString();
+      
+      return {
+        rank: index + 1,
+        avatar: blogger.profile.avatar_url || "https://images.unsplash.com/photo-1494790108755-2616b612b1d4?w=400&h=400&fit=crop&crop=face",
+        name: blogger.profile.full_name || "Unknown",
+        handle: blogger.handle,
+        gender: blogger.gender || "Не указано",
+        topics: blogger.topics || [],
+        followers: followersFormatted,
+        postPrice: blogger.post_price || 0,
+        storyPrice: blogger.story_price || 0,
+        postReach: instagramPlatform?.post_reach ? `${(instagramPlatform.post_reach / 1000).toFixed(1)}K` : "0",
+        storyReach: instagramPlatform?.story_reach ? `${(instagramPlatform.story_reach / 1000).toFixed(1)}K` : "0",
+        bio: blogger.bio,
+        er: instagramPlatform?.engagement_rate ? `${instagramPlatform.engagement_rate.toFixed(1)}%` : "0%",
+        mart: blogger.mart_available,
+        barter: blogger.barter_available,
+        restrictedTopics: blogger.restricted_topics,
+      };
+    });
+  }, [dbBloggers]);
 
   // Filter bloggers based on current filters
   const filteredBloggers = useMemo(() => {
-    return mockBloggers.filter(blogger => {
+    return formattedBloggers.filter(blogger => {
       // Search filter
       if (filters.search) {
         const searchTerm = filters.search.toLowerCase();
@@ -56,7 +85,7 @@ const Index = () => {
 
       return true;
     });
-  }, [filters]);
+  }, [formattedBloggers, filters]);
 
   const handleBloggerClick = (handle: string) => {
     navigate(`/${handle}`);
@@ -86,7 +115,19 @@ const Index = () => {
 
           {/* Bloggers List */}
           <div className="flex-1 order-1 lg:order-2">
-            {isMobile ? (
+            {loading && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground text-lg">Загрузка блогеров...</p>
+              </div>
+            )}
+            
+            {error && (
+              <div className="text-center py-12">
+                <p className="text-destructive text-lg">Ошибка: {error}</p>
+              </div>
+            )}
+            
+            {!loading && !error && (isMobile ? (
               /* Mobile: Card Layout */
               <div className="grid gap-4">
                 {filteredBloggers.map((blogger) => (
@@ -115,9 +156,9 @@ const Index = () => {
                   onBloggerClick={handleBloggerClick}
                 />
               </div>
-            )}
+            ))}
 
-            {filteredBloggers.length === 0 && (
+            {!loading && !error && filteredBloggers.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground text-lg">
                   По вашим фильтрам блогеры не найдены

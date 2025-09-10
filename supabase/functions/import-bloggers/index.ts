@@ -45,10 +45,44 @@ serve(async (req) => {
   }
 
   try {
+    // Get the authorization header
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization header required' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Verify the user is authenticated and is an admin
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if user has admin role
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileError || !profile || profile.role !== 'admin') {
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const { googleSheetsUrl, csvData } = await req.json();
     console.log('Request data:', { googleSheetsUrl: !!googleSheetsUrl, csvData: !!csvData });
@@ -88,15 +122,28 @@ serve(async (req) => {
 
     for (const blogger of bloggers) {
       try {
-        // Create a placeholder user ID for this blogger
-        const placeholderUserId = crypto.randomUUID();
+        // Check if blogger already exists
+        const { data: existingBlogger } = await supabase
+          .from('bloggers')
+          .select('id')
+          .eq('handle', blogger.handle.startsWith('@') ? blogger.handle : `@${blogger.handle}`)
+          .single();
 
-        // Create profile
+        if (existingBlogger) {
+          console.log(`Blogger ${blogger.name} already exists, skipping`);
+          continue;
+        }
+
+        // Create a placeholder user ID for this blogger (for import purposes only)
+        const placeholderUserId = crypto.randomUUID();
+        const anonymousEmail = `anonymous-${placeholderUserId.slice(0, 8)}@blogger.local`;
+
+        // Create profile without real email exposure
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .insert({
             user_id: placeholderUserId,
-            email: `${blogger.handle.replace('@', '')}@placeholder.com`,
+            email: anonymousEmail, // Use anonymous email for imported bloggers
             full_name: blogger.name,
             role: 'blogger'
           })
