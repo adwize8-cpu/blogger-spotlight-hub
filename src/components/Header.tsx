@@ -56,6 +56,10 @@ export const Header = () => {
                   <User className="mr-2 h-4 w-4" />
                   <span>Профиль</span>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/admin')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Админка</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
